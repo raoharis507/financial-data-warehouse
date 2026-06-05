@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acme Ltd - Financial Data Warehouse</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* Main Content */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        /* Asset List */
+        .asset-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .asset-item:hover {
+            background: #e9ecef;
+        }
+
+        .asset-symbol {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .asset-name {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .asset-price {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: scale(1.02);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        /* Inputs */
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        /* Response Area */
+        .response-area {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow: auto;
+            margin-top: 15px;
+        }
+
+        /* LLM Chat */
+        .chat-area {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .chat-message {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .chat-question {
+            background: #667eea;
+            color: white;
+            margin-left: 20%;
+        }
+
+        .chat-answer {
+            background: #e9ecef;
+            margin-right: 20%;
+        }
+
+        /* Full width */
+        .full-width {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏦 Acme Ltd - Financial Data Warehouse</h1>
+            <p>Temporal Data Warehouse | Multi-Provider Support | LLM-Powered Assistant</p>
+            <span class="status online" id="statusBadge">🟢 Connected</span>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number" id="assetCount">-</div>
+                <div class="label">Total Assets</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="providerCount">-</div>
+                <div class="label">Data Providers</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="recordsCount">-</div>
+                <div class="label">Time Series Records</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="healthStatus">-</div>
+                <div class="label">System Health</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Assets Panel -->
+            <div class="card">
+                <h3>📊 Financial Assets</h3>
+                <div id="assetsList">Loading...</div>
+                <button class="btn btn-primary" onclick="loadAssets()">🔄 Refresh Assets</button>
+            </div>
+
+            <!-- Analytics Panel -->
+            <div class="card">
+                <h3>📈 Analytics & Reports</h3>
+                <select id="analyticsAsset">
+                    <option value="AAPL">AAPL - Apple</option>
+                    <option value="MSFT">MSFT - Microsoft</option>
+                    <option value="BTC">BTC - Bitcoin</option>
+                </select>
+                <div>
+                    <button class="btn btn-primary" onclick="getMovingAverage()">Moving Average</button>
+                    <button class="btn btn-success" onclick="getForecast()">Price Forecast</button>
+                    <button class="btn btn-danger" onclick="getVolatility()">Risk Assessment</button>
+                </div>
+                <div id="analyticsResult" class="response-area">Click a button to see analytics...</div>
+            </div>
+
+            <!-- Data Ingestion -->
+            <div class="card">
+                <h3>💾 Data Ingestion (UC1)</h3>
+                <select id="ingestAsset">
+                    <option value="AAPL">AAPL - Apple</option>
+                    <option value="MSFT">MSFT - Microsoft</option>
+                    <option value="BTC">BTC - Bitcoin</option>
+                </select>
+                <select id="ingestProvider">
+                    <option value="Nasdaq">Nasdaq</option>
+                    <option value="Bloomberg">Bloomberg</option>
+                </select>
+                <button class="btn btn-success" onclick="ingestData()">📥 Ingest New Data</button>
+                <button class="btn btn-primary" onclick="getProvenance()">🔍 Show Provenance</button>
+                <div id="ingestResult" class="response-area">Ready to ingest data...</div>
+            </div>
+
+            <!-- LLM Assistant -->
+            <div class="card">
+                <h3>🤖 LLM Assistant (UC4) - MCP Integration</h3>
+                <div class="chat-area" id="chatArea">
+                    <div class="chat-message chat-answer">🤖 Hello! I can help you with financial data. Try asking me questions!</div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="llmQuery" placeholder="Ask me anything..." style="flex: 1;">
+                    <button class="btn btn-primary" onclick="askLLM()">Send</button>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button class="btn btn-warning" onclick="quickQuery('list assets')">📋 List Assets</button>
+                    <button class="btn btn-warning" onclick="quickQuery('show time series for AAPL')">📈 AAPL Prices</button>
+                    <button class="btn btn-warning" onclick="quickQuery('compare AAPL and MSFT')">⚖️ Compare</button>
+                    <button class="btn btn-warning" onclick="quickQuery('summarize trends')">📊 Trends</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints Reference -->
+        <div class="card full-width">
+            <h3>🔗 API Endpoints (Q1-Q5 & UC1-UC4)</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; font-size: 12px;">
+                <div><strong>Q1:</strong> GET /api/assets</div>
+                <div><strong>Q2:</strong> GET /api/assets/{id}</div>
+                <div><strong>Q3:</strong> GET /api/sources</div>
+                <div><strong>Q4:</strong> GET /api/sources/{id}</div>
+                <div><strong>Q5:</strong> GET /api/timeseries/{asset}/{provider}</div>
+                <div><strong>UC1:</strong> POST /api/ingest/{asset}/{provider}</div>
+                <div><strong>UC3:</strong> GET /api/analytics/ma/{asset}/{provider}</div>
+                <div><strong>UC3:</strong> GET /api/analytics/forecast/{asset}/{provider}</div>
+                <div><strong>UC3:</strong> GET /api/analytics/volatility/{asset}/{provider}</div>
+                <div><strong>UC4:</strong> GET /api/assistant/ask</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000';
+
+        // Load dashboard data
+        async function loadDashboard() {
+            await loadAssets();
+            await loadStats();
+        }
+
+        // Load assets
+        async function loadAssets() {
+            try {
+                const response = await fetch(`${API_URL}/api/assets`);
+                const assets = await response.json();
+                const container = document.getElementById('assetsList');
+                container.innerHTML = assets.map(asset => `
+                    <div class="asset-item" onclick="selectAsset('${asset.assetId}')">
+                        <div>
+                            <div class="asset-symbol">${asset.assetId}</div>
+                            <div class="asset-name">${asset.name}</div>
+                        </div>
+                        <div class="asset-price">${asset.assetClass.toUpperCase()}</div>
+                    </div>
+                `).join('');
+                document.getElementById('assetCount').innerText = assets.length;
+            } catch(e) {
+                document.getElementById('assetsList').innerHTML = '❌ Cannot connect to server';
+                document.getElementById('statusBadge').innerHTML = '🔴 Disconnected';
+            }
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/sources`);
+                const sources = await response.json();
+                document.getElementById('providerCount').innerText = sources.length;
+                
+                const health = await fetch(`${API_URL}/health`);
+                const healthData = await health.json();
+                document.getElementById('healthStatus').innerText = healthData.status;
+                document.getElementById('recordsCount').innerText = '12+';
+            } catch(e) {
+                console.log('Error loading stats');
+            }
+        }
+
+        // Analytics functions
+        async function getMovingAverage() {
+            const asset = document.getElementById('analyticsAsset').value;
+            const response = await fetch(`${API_URL}/api/analytics/ma/${asset}/Nasdaq?days=5`);
+            const data = await response.json();
+            document.getElementById('analyticsResult').innerHTML = JSON.stringify(data, null, 2);
+        }
+
+        async function getForecast() {
+            const asset = document.getElementById('analyticsAsset').value;
+            const response = await fetch(`${API_URL}/api/analytics/forecast/${asset}/Nasdaq?days_ahead=3`);
+            const data = await response.json();
+            document.getElementById('analyticsResult').innerHTML = JSON.stringify(data, null, 2);
+        }
+
+        async function getVolatility() {
+            const asset = document.getElementById('analyticsAsset').value;
+            const response = await fetch(`${API_URL}/api/analytics/volatility/${asset}/Nasdaq`);
+            const data = await response.json();
+            document.getElementById('analyticsResult').innerHTML = JSON.stringify(data, null, 2);
+        }
+
+        // Ingestion functions
+        async function ingestData() {
+            const asset = document.getElementById('ingestAsset').value;
+            const provider = document.getElementById('ingestProvider').value;
+            const response = await fetch(`${API_URL}/api/ingest/${asset}/${provider}`, { method: 'POST' });
+            const data = await response.json();
+            document.getElementById('ingestResult').innerHTML = JSON.stringify(data, null, 2);
+            loadStats();
+        }
+
+        async function getProvenance() {
+            const asset = document.getElementById('ingestAsset').value;
+            const provider = document.getElementById('ingestProvider').value;
+            const response = await fetch(`${API_URL}/api/provenance/${asset}/${provider}`);
+            const data = await response.json();
+            document.getElementById('ingestResult').innerHTML = JSON.stringify(data, null, 2);
+        }
+
+        // LLM functions
+        async function askLLM() {
+            const query = document.getElementById('llmQuery').value;
+            if (!query) return;
+            
+            const chatArea = document.getElementById('chatArea');
+            chatArea.innerHTML += `<div class="chat-message chat-question">👤 ${query}</div>`;
+            document.getElementById('llmQuery').value = '';
+            
+            const response = await fetch(`${API_URL}/api/assistant/ask?query=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            chatArea.innerHTML += `<div class="chat-message chat-answer">🤖 ${data.response}</div>`;
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function quickQuery(query) {
+            document.getElementById('llmQuery').value = query;
+            askLLM();
+        }
+
+        function selectAsset(assetId) {
+            document.getElementById('analyticsAsset').value = assetId;
+            document.getElementById('ingestAsset').value = assetId;
+        }
+
+        // Initial load
+        loadDashboard();
+        setInterval(loadDashboard, 30000);
+    </script>
+</body>
+</html>
+EOFcat > app_ui.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acme Ltd - Financial Data Warehouse</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* Main Content */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        /* Asset List */
+        .asset-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .asset-item:hover {
+            background: #e9ecef;
+        }
+
+        .asset-symbol {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .asset-name {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .asset-price {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: scale(1.02);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        /* Inputs */
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        /* Response Area */
+        .response-area {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow: auto;
+            margin-top: 15px;
+        }
+
+        /* LLM Chat */
+        .chat-area {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .chat-message {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .chat-question {
+            background: #667eea;
+            color: white;
+            margin-left: 20%;
+        }
+
+        .chat-answer {
+            background: #e9ecef;
+            margin-right: 20%;
+        }
+
+        /* Full width */
+        .full-width {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏦 Acme Ltd - Financial Data Warehouse</h1>
+            <p>Temporal Data Warehouse | Multi-Provider Support | LLM-Powered Assistant</p>
+            <span class="status online" id="statusBadge">🟢 Connected</span>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number" id="assetCount">-</div>
+                <div class="label">Total Assets</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="providerCount">-</div>
+                <div class="label">Data Providers</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="recordsCount">-</div>
+                <div class="label">Time Series Records</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="healthStatus">-</div>
+                <div class="label">System Health</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Assets Panel -->
+            <div class="card">
+                <h3>📊 Financial Assets</h3>
+                <div id="assetsList">Loading...</div>
+                <button class="btn btn-primary" onclick="loadAssets()">🔄 Refresh Assets</button>
+            </div>
+
+            <!-- Analytics Panel -->
+            <div class="card">
+                <h3>📈 Analytics & Reports</h3>
+                <select id="analyticsAsset">
+                    <option value="AAPL">AAPL - Apple</option>
+                    <option value="MSFT">MSFT - Microsoft</option>
+                    <option value="BTC">BTC - Bitcoin</option>
+                </select>
+                <div>
+                    <button class="btn btn-primary" onclick="getMovingAverage()">Moving Average</button>
+                    <button class="btn btn-success" onclick="getForecast()">Price Forecast</button>
+                    <button class="btn btn-danger" onclick="getVolatility()">Risk Assessment</button>
+                </div>
+                <div id="analyticsResult" class="response-area">Click a button to see analytics...</div>
+            </div>
+
+            <!-- Data Ingestion -->
+            <div class="card">
+                <h3>💾 Data Ingestion (UC1)</h3>
+                <select id="ingestAsset">
+                    <option value="AAPL">AAPL - Apple</option>
+                    <option value="MSFT">MSFT - Microsoft</option>
+                    <option value="BTC">BTC - Bitcoin</option>
+                </select>
+                <select id="ingestProvider">
+                    <option value="Nasdaq">Nasdaq</option>
+                    <option value="Bloomberg">Bloomberg</option>
+                </select>
+                <button class="btn btn-success" onclick="ingestData()">📥 Ingest New Data</button>
+                <button class="btn btn-primary" onclick="getProvenance()">🔍 Show Provenance</button>
+                <div id="ingestResult" class="response-area">Ready to ingest data...</div>
+            </div>
+
+            <!-- LLM Assistant -->
+            <div class="card">
+                <h3>🤖 LLM Assistant (UC4) - MCP Integration</h3>
+                <div class="chat-area" id="chatArea">
+                    <div class="chat-message chat-answer">🤖 Hello! I can help you with financial data. Try asking me questions!</div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="llmQuery" placeholder="Ask me anything..." style="flex: 1;">
+                    <button class="btn btn-primary" onclick="askLLM()">Send</button>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button class="btn btn-warning" onclick="quickQuery('list assets')">📋 List Assets</button>
+                    <button class="btn btn-warning" onclick="quickQuery('show time series for AAPL')">📈 AAPL Prices</button>
+                    <button class="btn btn-warning" onclick="quickQuery('compare AAPL and MSFT')">⚖️ Compare</button>
+                    <button class="btn btn-warning" onclick="quickQuery('summarize trends')">📊 Trends</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints Reference -->
+        <div class="card full-width">
+            <h3>🔗 API Endpoints (Q1-Q5 & UC1-UC4)</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; font-size: 12px;">
+                <div><strong>Q1:</strong> GET /api/assets</div>
+                <div><strong>Q2:</strong> GET /api/assets/{id}</div>
+                <div><strong>Q3:</strong> GET /api/sources</div>
+                <div><strong>Q4:</strong> GET /api/sources/{id}</div>
+                <div><strong>Q5:</strong> GET /api/timeseries/{asset}/{provider}</div>
+                <div><strong>UC1:</strong> POST /api/ingest/{asset}/{provider}</div>
+                <div><strong>UC3:</strong> GET /api/analytics/ma/{asset}/{provider}</div>
+                <div><strong>UC3:</strong> GET /api/analytics/forecast/{asset}/{provider}</div>
+                <div><strong>UC3:</strong> GET /api/analytics/volatility/{asset}/{provider}</div>
+                <div><strong>UC4:</strong> GET /api/assistant/ask</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000';
+
+        // Load dashboard data
+        async function loadDashboard() {
+            await loadAssets();
+            await loadStats();
+        }
+
+        // Load assets
+        async function loadAssets() {
+            try {
+                const response = await fetch(`${API_URL}/api/assets`);
+                const assets = await response.json();
+                const container = document.getElementById('assetsList');
+                container.innerHTML = assets.map(asset => `
+                    <div class="asset-item" onclick="selectAsset('${asset.assetId}')">
+                        <div>
+                            <div class="asset-symbol">${asset.assetId}</div>
+                            <div class="asset-name">${asset.name}</div>
+                        </div>
+                        <div class="asset-price">${asset.assetClass.toUpperCase()}</div>
+                    </div>
+                `).join('');
+                document.getElementById('assetCount').innerText = assets.length;
+            } catch(e) {
+                document.getElementById('assetsList').innerHTML = '❌ Cannot connect to server';
+                document.getElementById('statusBadge').innerHTML = '🔴 Disconnected';
+            }
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/sources`);
+                const sources = await response.json();
+                document.getElementById('providerCount').innerText = sources.length;
+                
+                const health = await fetch(`${API_URL}/health`);
+                const healthData = await health.json();
+                document.getElementById('healthStatus').innerText = healthData.status;
+                document.getElementById('recordsCount').innerText = '12+';
+            } catch(e) {
+                console.log('Error loading stats');
+            }
+        }
+
+        // Analytics functions
+        async function getMovingAverage() {
+            const asset = document.getElementById('analyticsAsset').value;
+            const response = await fetch(`${API_URL}/api/analytics/ma/${asset}/Nasdaq?days=5`);
+            const data = await response.json();
+            document.getElementById('analyticsResult').innerHTML = JSON.stringify(data, null, 2);
+        }
+
+        async function getForecast() {
+            const asset = document.getElementById('analyticsAsset').value;
+            const response = await fetch(`${API_URL}/api/analytics/forecast/${asset}/Nasdaq?days_ahead=3`);
+            const data = await response.json();
+            document.getElementById('analyticsResult').innerHTML = JSON.stringify(data, null, 2);
+        }
+
+        async function getVolatility() {
+            const asset = document.getElementById('analyticsAsset').value;
+            const response = await fetch(`${API_URL}/api/analytics/volatility/${asset}/Nasdaq`);
+            const data = await response.json();
+            document.getElementById('analyticsResult').innerHTML = JSON.stringify(data, null, 2);
+        }
+
+        // Ingestion functions
+        async function ingestData() {
+            const asset = document.getElementById('ingestAsset').value;
+            const provider = document.getElementById('ingestProvider').value;
+            const response = await fetch(`${API_URL}/api/ingest/${asset}/${provider}`, { method: 'POST' });
+            const data = await response.json();
+            document.getElementById('ingestResult').innerHTML = JSON.stringify(data, null, 2);
+            loadStats();
+        }
+
+        async function getProvenance() {
+            const asset = document.getElementById('ingestAsset').value;
+            const provider = document.getElementById('ingestProvider').value;
+            const response = await fetch(`${API_URL}/api/provenance/${asset}/${provider}`);
+            const data = await response.json();
+            document.getElementById('ingestResult').innerHTML = JSON.stringify(data, null, 2);
+        }
+
+        // LLM functions
+        async function askLLM() {
+            const query = document.getElementById('llmQuery').value;
+            if (!query) return;
+            
+            const chatArea = document.getElementById('chatArea');
+            chatArea.innerHTML += `<div class="chat-message chat-question">👤 ${query}</div>`;
+            document.getElementById('llmQuery').value = '';
+            
+            const response = await fetch(`${API_URL}/api/assistant/ask?query=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            chatArea.innerHTML += `<div class="chat-message chat-answer">🤖 ${data.response}</div>`;
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function quickQuery(query) {
+            document.getElementById('llmQuery').value = query;
+            askLLM();
+        }
+
+        function selectAsset(assetId) {
+            document.getElementById('analyticsAsset').value = assetId;
+            document.getElementById('ingestAsset').value = assetId;
+        }
+
+        // Initial load
+        loadDashboard();
+        setInterval(loadDashboard, 30000);
+    </script>
+</body>
+</html>
