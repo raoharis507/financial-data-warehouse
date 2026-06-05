@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Financial Data Warehouse Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { color: #2c3e50; text-align: center; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; color: #3498db; }
+        .asset-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .asset-item { background: #e8f4fd; padding: 15px; border-radius: 5px; }
+        .asset-symbol { font-size: 20px; font-weight: bold; color: #2c3e50; }
+        .button { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .button:hover { background: #2980b9; }
+        pre { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .flex { display: flex; gap: 10px; flex-wrap: wrap; }
+        input { padding: 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; flex: 1; }
+        .result { margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏦 Financial Data Warehouse</h1>
+        <h3>Acme Ltd - Market Data Platform</h3>
+        
+        <div class="card">
+            <h3>📊 Assets Overview</h3>
+            <div id="assets" class="asset-list">Loading...</div>
+        </div>
+        
+        <div class="card">
+            <h3>📈 Analytics & Forecasting</h3>
+            <div class="flex">
+                <select id="assetSelect">
+                    <option value="AAPL">AAPL - Apple</option>
+                    <option value="MSFT">MSFT - Microsoft</option>
+                    <option value="BTC">BTC - Bitcoin</option>
+                </select>
+                <button class="button" onclick="getMovingAverage()">Moving Average</button>
+                <button class="button" onclick="getForecast()">Forecast</button>
+                <button class="button" onclick="getVolatility()">Volatility</button>
+            </div>
+            <div id="analyticsResult" class="result"></div>
+        </div>
+        
+        <div class="card">
+            <h3>🤖 LLM Assistant</h3>
+            <div class="flex">
+                <input type="text" id="llmQuery" placeholder="Ask: list assets, show prices for AAPL...">
+                <button class="button" onclick="askAssistant()">Ask</button>
+            </div>
+            <div class="flex" style="margin-top: 10px;">
+                <button class="button" onclick="setQuery('list assets')">List Assets</button>
+                <button class="button" onclick="setQuery('show time series for AAPL')">AAPL Prices</button>
+                <button class="button" onclick="setQuery('compare AAPL and MSFT')">Compare</button>
+            </div>
+            <div id="llmResult" class="result"></div>
+        </div>
+    </div>
+    
+    <script>
+        const BASE_URL = 'http://127.0.0.1:8000';
+        
+        async function loadAssets() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/assets`);
+                const assets = await response.json();
+                document.getElementById('assets').innerHTML = assets.map(asset => `
+                    <div class="asset-item">
+                        <div class="asset-symbol">${asset.assetId}</div>
+                        <div class="asset-name">${asset.name}</div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                document.getElementById('assets').innerHTML = '❌ Server not running';
+            }
+        }
+        
+        async function getMovingAverage() {
+            const asset = document.getElementById('assetSelect').value;
+            const r = await fetch(`${BASE_URL}/api/analytics/ma/${asset}/Nasdaq?days=5`);
+            const d = await r.json();
+            document.getElementById('analyticsResult').innerHTML = `<pre>5-day MA: $${d.moving_average}</pre>`;
+        }
+        
+        async function getForecast() {
+            const asset = document.getElementById('assetSelect').value;
+            const r = await fetch(`${BASE_URL}/api/analytics/forecast/${asset}/Nasdaq?days_ahead=3`);
+            const d = await r.json();
+            document.getElementById('analyticsResult').innerHTML = `<pre>Forecast: ${d.predictions.join(' → ')}\nTrend: ${d.trend}</pre>`;
+        }
+        
+        async function getVolatility() {
+            const asset = document.getElementById('assetSelect').value;
+            const r = await fetch(`${BASE_URL}/api/analytics/volatility/${asset}/Nasdaq`);
+            const d = await r.json();
+            document.getElementById('analyticsResult').innerHTML = `<pre>Volatility: ${(d.volatility*100).toFixed(1)}%\nRisk: ${d.risk_level}</pre>`;
+        }
+        
+        async function askAssistant() {
+            const q = document.getElementById('llmQuery').value;
+            if(!q) return;
+            const r = await fetch(`${BASE_URL}/api/assistant/ask?query=${encodeURIComponent(q)}`);
+            const d = await r.json();
+            document.getElementById('llmResult').innerHTML = `<pre>🤖 ${d.response}</pre>`;
+        }
+        
+        function setQuery(text) {
+            document.getElementById('llmQuery').value = text;
+            askAssistant();
+        }
+        
+        loadAssets();
+        setInterval(loadAssets, 10000);
+    </script>
+</body>
+</html>
