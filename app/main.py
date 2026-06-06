@@ -159,3 +159,16 @@ async def ask_assistant(query: str):
     from app.services.llm_assistant import LLMAssistant
     result = await LLMAssistant.process_query(query)
     return result
+
+# Spark Analytics Endpoints (M6 & M7)
+@app.get("/api/spark/ma/{asset_id}/{provider}")
+async def spark_moving_average(asset_id: str, provider: str, days: int = 5):
+    """Moving average using Apache Spark"""
+    from app.services.spark_analytics import SparkAnalyticsService
+    return await SparkAnalyticsService.calculate_moving_average_spark(asset_id, provider, days)
+
+@app.get("/api/spark/forecast/{asset_id}/{provider}")
+async def spark_forecast(asset_id: str, provider: str, days_ahead: int = 3):
+    """Price forecast using Apache Spark MLlib"""
+    from app.services.spark_analytics import SparkAnalyticsService
+    return await SparkAnalyticsService.forecast_price_spark(asset_id, provider, days_ahead)
