@@ -11,3 +11,6 @@ A complete data warehouse platform for financial market data with temporal stora
 
 ## Author
 Haris Mustafa
+
+## Demo Video
+[Watch Demo Video](https://drive.google.com/file/d/1C28Y7GTp651RXIkrwjLAPE9QXJqxQXur/view?usp=sharing)
