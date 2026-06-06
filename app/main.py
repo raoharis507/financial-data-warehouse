@@ -172,3 +172,32 @@ async def spark_forecast(asset_id: str, provider: str, days_ahead: int = 3):
     """Price forecast using Apache Spark MLlib"""
     from app.services.spark_analytics import SparkAnalyticsService
     return await SparkAnalyticsService.forecast_price_spark(asset_id, provider, days_ahead)
+
+# Real Data Ingestion with Yahoo Finance (Idempotent)
+@app.post("/api/ingest/real/{asset_symbol}")
+async def ingest_real_data(asset_symbol: str):
+    """Ingest real data from Yahoo Finance API (idempotent - no duplicates)"""
+    from app.services.real_ingestion import RealIngestionService
+    result = await RealIngestionService.ingest_from_yahoo(asset_symbol)
+    return result
+
+@app.get("/api/ingest/check/{asset_symbol}/{date}")
+async def check_idempotent(asset_symbol: str, date: str):
+    """Check if data already exists for a specific date"""
+    from app.services.real_ingestion import RealIngestionService
+    result = await RealIngestionService.get_idempotent_ingest(asset_symbol, date)
+    return result
+
+# Provider-Agnostic Ingestion (Easy to add new providers)
+@app.post("/api/ingest/provider/{asset_symbol}/{provider_name}")
+async def ingest_from_provider(asset_symbol: str, provider_name: str):
+    """Ingest data from any registered provider (yahoo, mock)"""
+    from app.services.provider_interface import ProviderIngestionService
+    result = await ProviderIngestionService.ingest_from_provider(asset_symbol, provider_name)
+    return result
+
+@app.get("/api/providers")
+async def list_providers():
+    """List all registered providers"""
+    from app.services.provider_interface import ProviderIngestionService
+    return {"providers": list(ProviderIngestionService._providers.keys())}
